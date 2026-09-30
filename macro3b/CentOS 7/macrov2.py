@@ -13,7 +13,8 @@ xtst = ctypes.CDLL("libXtst.so.6")
 display = x11.XOpenDisplay(None)
 
 # 2. CARGAR PRODUCTOS DESDE UN ARCHIVO JSON EXTERNO
-ruta_json = "productos.json"
+script_dir = os.path.dirname(os.path.abspath(__file__))
+ruta_json = os.path.join(script_dir, "productos.json")
 if os.path.exists(ruta_json):
     with open(ruta_json, "r") as f:
         productos = json.load(f)
@@ -35,20 +36,20 @@ def simular_tecleo_codigo(codigo):
         # Presionar tecla virtualmente
         xtst.XTestFakeKeyEvent(display, keycode, True, 0)
         x11.XFlush(display)
-        time.sleep(0.02)
+        time.sleep(0.01)
         
         # Soltar tecla virtualmente
         xtst.XTestFakeKeyEvent(display, keycode, False, 0)
         x11.XFlush(display)
-        time.sleep(0.02)
+        time.sleep(0.01)
 
-    # Simular la tecla Enter (Código X11 para Return: 0xff0d)
-    enter_keycode = x11.XKeysymToKeycode(display, 0xff0d)
-    xtst.XTestFakeKeyEvent(display, enter_keycode, True, 0)
-    x11.XFlush(display)
-    time.sleep(0.02)
-    xtst.XTestFakeKeyEvent(display, enter_keycode, False, 0)
-    x11.XFlush(display)
+    # # Simular la tecla Enter (Código X11 para Return: 0xff0d)
+    # enter_keycode = x11.XKeysymToKeycode(display, 0xff0d)
+    # xtst.XTestFakeKeyEvent(display, enter_keycode, True, 0)
+    # x11.XFlush(display)
+    # time.sleep(0.02)
+    # xtst.XTestFakeKeyEvent(display, enter_keycode, False, 0)
+    # x11.XFlush(display)
 
     # Volver a mostrar la ventana para el siguiente cobro
     ventana.show_all()
@@ -57,8 +58,8 @@ def simular_tecleo_codigo(codigo):
 # 4. FUNCIÓN AL PRESIONAR UN BOTÓN DE PRODUCTO
 def al_clic_boton(widget, codigo):
     ventana.hide()  # Oculta la interfaz para que el tecleo vaya al software de cobro
-    # Programa la escritura tras 500ms usando el bucle de eventos de GLib/GObject
-    gobject.timeout_add(500, simular_tecleo_codigo, codigo)
+    # Programa la escritura tras 250ms usando el bucle de eventos de GLib/GObject
+    gobject.timeout_add(250, simular_tecleo_codigo, codigo)
 
 # 5. MOTOR DEL BUSCADOR (Filtrado dinámico en tiempo real)
 def al_escribir(widget_buscador):
@@ -77,6 +78,12 @@ ventana = gtk.Window(gtk.WINDOW_TOPLEVEL)
 ventana.set_title("Códigos Rápidos 3B")
 ventana.set_default_size(300, 400)
 ventana.set_keep_above(True)  # Mantiene la ventana siempre flotando arriba
+ancho_pantalla = gtk.gdk.screen_width()
+ancho_ventana = 300
+margen_derecho = 15
+pos_x = ancho_pantalla - ancho_ventana - margen_derecho
+pos_y = 40
+ventana.move(pos_x, pos_y)
 ventana.connect("destroy", gtk.main_quit)
 
 caja_principal = gtk.VBox(False, 10)
@@ -96,6 +103,7 @@ area_scroll.add_with_viewport(contenedor_productos)
 # 6. CREACIÓN DINÁMICA DE BOTONES A PARTIR DEL DICCIONARIO
 for nombre, codigo in productos.items():
     btn = gtk.Button(label=nombre)
+    btn.set_focus_on_click(False)
     btn.connect("clicked", al_clic_boton, codigo)  # Conecta el clic con la función enviando su código
     contenedor_productos.pack_start(btn, False, False, 0)
 
